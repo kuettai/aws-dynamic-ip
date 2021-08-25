@@ -1,0 +1,47 @@
+{
+  "Comment": "EC2 Outgoing IP Refreshs",
+  "StartAt": "CreateNatGWEIP",
+  "States": {
+    "CreateNatGWEIP": {
+      "Type": "Task",
+      "Resource": "arn:aws:lambda:ap-southeast-1:956288449190:function:autoNatGateway-Part001",
+      "Next": "waitForNewNATSetup"
+    },
+    "waitForNewNATSetup": {
+      "Type": "Wait",
+      "Seconds": 30,
+      "Next": "CheckIfNewNATReady"
+    },
+    "CheckIfNewNATReady": {
+      "Type": "Task",
+      "Resource": "arn:aws:lambda:ap-southeast-1:956288449190:function:autoNatGateway-Check-Part001",
+      "Next": "ChoiceNewNATStatus"
+    },
+    "ChoiceNewNATStatus": {
+      "Type": "Choice",
+      "Choices": [
+        {
+          "Variable": "$.ngwStatus",
+          "StringEquals": "available",
+          "Next": "AssocRoute"
+        }
+      ],
+      "Default": "waitForNewNATSetup"
+    },
+    "AssocRoute": {
+      "Type": "Task",
+      "Resource": "arn:aws:lambda:ap-southeast-1:956288449190:function:autoNatGateway-Part002",
+      "Next": "waitForOldNATDeletion"
+    },
+    "waitForOldNATDeletion": {
+      "Type": "Wait",
+      "Seconds": 90,
+      "Next": "ReleaseEIP"
+    },
+    "ReleaseEIP": {
+      "Type": "Task",
+      "Resource": "arn:aws:lambda:ap-southeast-1:956288449190:function:autoNatGateway-Part003",
+      "End": true
+    }
+  }
+}
